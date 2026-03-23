@@ -104,6 +104,7 @@
 
 # 进阶：迭代器玩的就是__next__
 # region
+from cn2an import an2cn
 class Person:
     def __init__(self, name, age, gender, address):
         self.name = name
@@ -128,6 +129,8 @@ class Person:
         # 将字符串转为大写
         if isinstance(value,str):
             value = value.upper()
+        if isinstance(value,int):
+            value = an2cn(value)
         # 更新迭代器状态，即指针位置
         self.__index += 1
         return value
