@@ -3,6 +3,8 @@ import os
 from openai import OpenAI
 import tiktoken
 
+os.environ['http_proxy'] = '127.0.0.1:7890'
+os.environ['https_proxy'] = '127.0.0.1:7890'
 # 需要的依赖库
 # pip install tiktoken openai pandas matplotlib plotly scikit-learn numpy
 # 运行可能报错是因为pandas中的numpy和其他环境中的numpy冲突,卸载重装pandas即可
@@ -24,7 +26,6 @@ df = df.dropna()
 # 把Summary，Text两个字段合并
 df['combined'] = "Title:" + df.Summary.str.strip() + ";Content:" + df.Text.str.strip()
 
-
 # print(df.head(2))
 
 # 2.生成Embedding之后的向量空间，并且保存
@@ -36,14 +37,14 @@ tokenizer_name = 'cl100k_base'
 max_tokens = 8191
 top_n = 1000
 df = df.sort_values('Time')
-df.drop("Time",axis=1,inplace=True)
+df.drop("Time", axis=1, inplace=True)
 
 # 创建一个分词器
 tokenizer = tiktoken.get_encoding(encoding_name=tokenizer_name)
 
 # 控制输入数据的token数量
 # 计算token数量
-df['count_token'] = df.combined.apply(lambda x : len(tokenizer.encode(x)))
+df['count_token'] = df.combined.apply(lambda x: len(tokenizer.encode(x)))
 
 # 判断token数量不能超过官方的阈值：8191,超过了就不要，tail是截断函数
 df = df[df.count_token <= max_tokens].tail(top_n)
@@ -51,7 +52,8 @@ df = df[df.count_token <= max_tokens].tail(top_n)
 print(len(df))
 
 # 初始化openai的客户端
-client = OpenAI()
+API_KEY = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=API_KEY,base_url="https://api.zhizengzeng.com/v1")
 
 def embedding_text(text, model=embedding_mode):
     """
@@ -60,8 +62,12 @@ def embedding_text(text, model=embedding_mode):
     :param model:
     :return:
     """
-    resp = client.embeddings.create(input=text,model=model)
+
+    resp = client.embeddings.create(input=text, model=model)
     return resp.data[0].embedding
+
+
+
 
 # 使用Embedding处理文本
 df['embedding'] = df.combined.apply(embedding_text)
